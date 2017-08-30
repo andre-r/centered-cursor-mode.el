@@ -339,7 +339,9 @@ the center. Just the variable ccm-vpos is set."
                                            (goto-char (point-max))
                                            (zerop (current-column))))
                                      1 0)))
-                   (window-is-at-bottom (= (window-end) (point-max)))
+                   (window-is-at-bottom (or (= (window-end) (point-max)) ; doesn't work when scrolling (eg. pgdwn)
+                                            (= (line-end-position ccm-vpos) (point-max)) ; doesn't work on repls second to last line, because the prompt gets inserted later?
+                                            ))
                    ;; lines from point to end of buffer
                    (bottom-lines (if window-is-at-bottom
                                      (+ (count-lines (point) (point-max))
