@@ -9,10 +9,10 @@
 ;; Package-Version: 20151001.634
 ;; Package-X-Original-Version: 20150302.831
 
-;; URL: http://www.emacswiki.org/cgi-bin/wiki/centered-cursor-mode.el
-;; Compatibility: tested with GNU Emacs 23.0, 24
-;; Version: 0.5.4
-;; Last-Updated: 2015-10-01
+;; URL: https://github.com/andre-r/centered-cursor-mode.el
+;; Compatibility: tested with GNU Emacs 23.0, 24, 26
+;; Version: 0.5.5
+;; Last-Updated: 2017-08-30
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -58,6 +58,8 @@
 ;; - more bugs?
 
 ;;; Change Log:
+;; 2017-08-30 chrm
+;;   * Fixed a bug with recentering at end of file
 ;; 2015-10-01 Hinrik Örn Sigurðsson <hinrik.sig@gmail.com>
 ;;   * Avoided calling count-lines when unnecessary, which
 ;;     fixes slow scrolling in large files
