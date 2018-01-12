@@ -323,14 +323,14 @@ the center. Just the variable ccm-vpos is set."
           (let* ((current-line
                   (if (< ccm-vpos 0)
                       ;; one-based, from bottom, negative
-                      (- (count-lines (point)
+                      (- (count-screen-lines (point)
                                       ;; window-end is sometimes < 0
                                       ;; when opening a help buffer
                                       (if (> (window-end) 0)
                                           (window-end)
                                         1)))
                     ;; zero-based, from top, positive
-                    (+ (count-lines (window-start) (point))
+                    (+ (count-screen-lines (window-start) (point))
                        ;; count-lines returns different value in column 0
                        (if (= (current-column) 0) 0 -1))))
                  (diff (- ccm-vpos current-line))
@@ -353,7 +353,7 @@ the center. Just the variable ccm-vpos is set."
                                             ))
                    ;; lines from point to end of buffer
                    (bottom-lines (if window-is-at-bottom
-                                     (+ (count-lines (point) (point-max))
+                                     (+ (count-screen-lines (point) (point-max))
                                         correction))))
 
               ;; only animate if the point was moved rather far away
