@@ -9,7 +9,7 @@
 
 ;; URL: https://github.com/andre-r/centered-cursor-mode.el
 ;; Compatibility: tested with GNU Emacs 23.0, 24, 26
-;; Version: 0.5.6
+;; Version: 0.5.7
 ;; Last-Updated: 2018-01-12
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -59,6 +59,8 @@
 ;; 2018-01-12 andre-r
 ;;   * #3: Centering does not take line-height into account
 ;;     - added new function for calculating visible lines
+;;   * #2: Bug with collapsed lines (eg. org-mode)
+;;     - used count-screen-lines instead of count-lines
 ;; 2017-08-30 chrm
 ;;   * Fixed a bug with recentering at end of file
 ;; 2015-10-01 Hinrik Örn Sigurðsson <hinrik.sig@gmail.com>
