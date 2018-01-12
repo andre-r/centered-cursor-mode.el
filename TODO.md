@@ -1,0 +1,21 @@
+- interactive first start isn't animated when calling `global-...` because it starts the modes for each buffer and `interactive-p` fails for that
+- don't load keyboard shortcuts (like `C-M-+`) by default and provide function to load (like `(ffap-bindings)`)
+- selecting text with mouse scrolls (`last-command` variable contains an event in this case)
+- use `(while-no-input ...)`? see `post-command-hook` doc
+- recalculate cursor position on some events like after `(default-text-scale)` if necessary
+- acceleration on S-scroll like in `mwheel-scroll`
+- consider `mouse-wheel-progressive-speed`
+- consider `mouse-wheel-scroll-amount` for scroll wheel binding customization (allow also hyper etc)
+- when executing `M-x command` that shows a suggestion "You can run the command ... with ..." only after the message recentering occurs (issue with `post-command-hook`?)
+- with `ccm-vpos-up`/`ccm-vpos-down` set `vpos` is not remembered after buffer switch
+- reconsider customization for cursor position:
+  - no more `ccm-vpos-inverted` and more options: Center, Golden ratio, Golden ration from botton, Percentage, Lines from top or bottom
+  - simple symbol or integer or float for saving
+- use `package-lint` on source file
+
+#### Combatibility with other packages
+- package `default-text-scale`
+- command `text-scale-increase` etc.
+- package `undo-tree`
+- `Info-scroll-down` doesn't scroll up to the top
+- consider `recenter-top-bottom`?
