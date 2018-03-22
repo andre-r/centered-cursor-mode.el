@@ -12,6 +12,7 @@
   - no more `ccm-vpos-inverted` and more options: Center, Golden ratio, Golden ration from botton, Percentage, Lines from top or bottom
   - simple symbol or integer or float for saving
 - use `package-lint` on source file
+- cursor position as window parameter instead of buffer local?
 
 #### Combatibility with other packages
 - package `default-text-scale`
