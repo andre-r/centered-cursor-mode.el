@@ -5,4 +5,4 @@ Makes the cursor stay vertically in a defined position (usually centered) while 
 
 The vertical position can be customized. 
 
-The code is still in development (although the last update was 2015).
+The code is still in development (see [todo list](TODO.md)).
