@@ -10,7 +10,7 @@
 - with `ccm-vpos-up`/`ccm-vpos-down` set `vpos` is not remembered after buffer switch
 - reconsider customization for cursor position:
   - no more `ccm-vpos-inverted` and more options: Center, Golden ratio, Golden ration from botton, Percentage, Lines from top or bottom
-  - simple symbol or integer or float for saving
+  - simple symbol or integer or float for saving (and more robust with wrong customizations)
 - use `package-lint` on source file
 - cursor position as window parameter instead of buffer local?
 
