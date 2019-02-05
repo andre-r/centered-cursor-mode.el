@@ -56,6 +56,10 @@
 ;; - more bugs?
 
 ;;; Change Log:
+;; 2019-02-05 andre-r
+;;   * tip from MATTHIAS Andreas
+;;     - replaced forward-line with next-line in ccm-scroll-up and ccm-scroll-down;
+;;       scrolled too far in visual-line-mode
 ;; 2018-01-12 andre-r
 ;;   * #3: Centering does not take line-height into account
 ;;     - added new function for calculating visible lines
@@ -261,7 +265,7 @@ a fixed position the movement appears as page up."
   (interactive "P")
   (let ((amt (or arg (- (ccm-visible-text-lines)
                         next-screen-context-lines))))
-    (forward-line (- amt))))
+    (next-line (- amt))))
 
 (defun ccm-scroll-up (&optional arg)
   "Replaces `scroll-up' to be consistent with `ccm-scroll-down'.
@@ -271,7 +275,7 @@ the movement appears as page up."
   (interactive "P")
   (let ((amt (or arg (- (ccm-visible-text-lines)
                         next-screen-context-lines))))
-    (forward-line amt)))
+    (next-line amt)))
 
 
 (defun ccm-vpos-down (arg)
