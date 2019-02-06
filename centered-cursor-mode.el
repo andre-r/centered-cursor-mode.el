@@ -8,9 +8,9 @@
 ;; Keywords: convenience
 
 ;; URL: https://github.com/andre-r/centered-cursor-mode.el
-;; Compatibility: tested with GNU Emacs 23.0, 24, 26
-;; Version: 0.5.7
-;; Last-Updated: 2018-01-12
+;; Compatibility: tested with GNU Emacs 24, 26, 27
+;; Version: 0.5.8
+;; Last-Updated: 2019-02-05
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ If you want a different animation speed."
   :type 'number)
 
 (defcustom ccm-ignored-commands '(mouse-drag-region
-								  mouse-set-region
+                                  mouse-set-region
                                   mouse-set-point
                                   widget-button-click
                                   scroll-bar-toolkit-scroll)
