@@ -1,6 +1,5 @@
 - interactive first start isn't animated when calling `global-...` because it starts the modes for each buffer and `interactive-p` fails for that
 - don't load keyboard shortcuts (like `C-M-+`) by default and provide function to load (like `(ffap-bindings)`)
-- selecting text with mouse scrolls (`last-command` variable contains an event in this case)
 - use `(while-no-input ...)`? see `post-command-hook` doc
 - recalculate cursor position on some events like after `(default-text-scale)` if necessary
 - acceleration on S-scroll like in `mwheel-scroll`
