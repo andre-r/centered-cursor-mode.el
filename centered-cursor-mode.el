@@ -9,8 +9,8 @@
 
 ;; URL: https://github.com/andre-r/centered-cursor-mode.el
 ;; Compatibility: tested with GNU Emacs 24, 26, 27
-;; Version: 0.5.8
-;; Last-Updated: 2019-02-05
+;; Version: 0.5.9
+;; Last-Updated: 2019-02-24
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@
 ;; - more bugs?
 
 ;;; Change Log:
+;; 2019-02-24 Gollum999
+;;   * Fix aggressive centering while dragging mouse (selecting text doesn't scroll)
 ;; 2019-02-05 andre-r
 ;;   * tip from MATTHIAS Andreas
 ;;     - replaced forward-line with next-line in ccm-scroll-up and ccm-scroll-down;
