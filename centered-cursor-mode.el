@@ -144,7 +144,8 @@ If you want a different animation speed."
                                   mouse-set-region
                                   mouse-set-point
                                   widget-button-click
-                                  scroll-bar-toolkit-scroll)
+                                  scroll-bar-toolkit-scroll
+                                  evil-mouse-drag-region)
   "After these commands recentering is ignored.
 This is to prevent unintentional jumping (especially when mouse
 clicking). Following commands (except the ignored ones) will
