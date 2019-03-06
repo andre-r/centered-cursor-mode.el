@@ -151,6 +151,14 @@ jumping to the center."
   :tag "Ignored commands"
   :type '(repeat (symbol :tag "Command")))
 
+(defcustom ccm-inhibit-centering-when '(ccm-ignored-command-p
+                                        ccm-mouse-drag-movement-p)
+  "A list of functions which are allowed to inhibit recentering.
+If any of these return t, recentering is canceled."
+  :group 'centered-cursor
+  :tag "Inhibit centering when"
+  :type '(repeat (symbol :tag "Function")))
+
 ;;;###autoload
 (defun ccm-visible-text-lines ()
   "Visible text lines"
@@ -322,9 +330,17 @@ the center. Just the variable ccm-vpos is set."
       (setq ccm-vpos (* (eval ccm-vpos-init)
                         ccm-vpos-inverted))))
 
+(defun ccm-ignored-command-p ()
+  "Check if the last command was one listed in CCM-IGNORED-COMMANDS."
+  (member this-command ccm-ignored-commands))
+
+(defun ccm-mouse-drag-movement-p ()
+  "Check if the last input event corresponded to a mouse drag event."
+  (mouse-movement-p last-command-event))
+
 (defun ccm-position-cursor ()
   "Do the actual recentering at the position `ccm-vpos'."
-  (unless (or (member this-command ccm-ignored-commands) (mouse-movement-p last-command-event))
+  (unless (seq-some #'funcall ccm-inhibit-centering-when)
     (unless ccm-vpos
       (ccm-vpos-recenter))
     (unless (minibufferp (current-buffer))
