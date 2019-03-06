@@ -9,7 +9,7 @@
 
 ;; URL: https://github.com/andre-r/centered-cursor-mode.el
 ;; Compatibility: tested with GNU Emacs 24, 26, 27
-;; Version: 0.5.10
+;; Version: 0.5.11
 ;; Last-Updated: 2019-03-06
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -59,6 +59,7 @@
 ;; 2019-03-06 kqr
 ;;   * more customisable way to inhibit recentering after a command:
 ;;     new defcustom ccm-inhibit-centering-when
+;;   * new ignored command evil-mouse-drag-region
 ;; 2019-02-24 Gollum999
 ;;   * Fix aggressive centering while dragging mouse (selecting text doesn't scroll)
 ;; 2019-02-05 andre-r
