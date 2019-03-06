@@ -6,3 +6,15 @@ Makes the cursor stay vertically in a defined position (usually centered) while 
 The vertical position can be customized. 
 
 The code is still in development (see [todo list](TODO.md)).
+
+
+## Technical
+
+If recentering is triggered after some sort of mouse interaction and you don't
+expect it to, this might indicate an incompatibility with some other mode you
+are using. A quick way to figure out what commands are actually triggered when
+you interact with the mouse is to use `command-log-mode` which will show you a
+stream of the command history as the commands are being evaluated.
+
+If any of the commands triggered on mouse interaction is not included in
+`ccm-ignored-commands`, you have found the cause.
