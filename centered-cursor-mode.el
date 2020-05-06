@@ -459,7 +459,7 @@ position (usually centered)."
     (remove-hook 'post-command-hook 'ccm-position-cursor t)
     (remove-hook 'window-configuration-change-hook 'ccm-vpos-recenter t))))
 
-
+;;;###autoload
 (define-global-minor-mode global-centered-cursor-mode centered-cursor-mode
   centered-cursor-mode)
 
