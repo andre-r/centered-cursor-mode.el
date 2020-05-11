@@ -14,22 +14,24 @@ with ...", recentering occurs after the message disappears (issue with `post-com
 
 * [ ] recalculate cursor position on some events like after `(default-text-scale)` if necessary (hook for text properties?)
 * [ ] (`while-no-input` ...), see `(describe-variable 'post-command-hook)`
-* [ ] rename file to centered-cursor.el?
-* [x] (80%?) reconsider customization for cursor position:
+* [ ] rename file to centered-cursor.el? would correspond more to standards
+* [x] reconsider customization for cursor position:
 ** no more `ccm-vpos-inverted` and more options: Center, Golden ratio, Golden ration from botton, Percentage, Lines from top or bottom
 ** simple symbol or integer or float for saving (and more robust with wrong customizations)
 * [ ] when switching window, update vpos, maybe animation
 * [ ] cursor position as window parameter instead of buffer local?
 * [ ] use `vertical-motion`?
 * [ ] `seq-do` instead of `mapcar` where possible
-* [ ] when changing pos, save as new default (if customized → new defcustom)
+* [ ] when changing pos, save as new default? (if customized → new defcustom)
 * [ ] clicking scrollbar arrows should move cursor
-* [ ] maybe: leave methods/context in sight
+* [ ] maybe: leave methods/context in sight (see `reposition-window`)
 
 == Code hygiene
 
 * [ ] replace tabs with spaces (`untabify`)
-* [ ] use `package-lint` on source file
+* [ ] use `package-lint`, `checkdoc` etc. on source file
+* [ ] test with emacs version < 28
+* [ ] test other packaging tools (el-get, cask)
 
 == Combatibility (with other packages etc.)
 
