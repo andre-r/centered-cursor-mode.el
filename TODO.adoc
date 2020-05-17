@@ -4,39 +4,44 @@
 
 == Bugs
 
-* [ ] interactive first start isn't animated when calling `global-...` because it starts the modes for each buffer and `interactive-p` fails for that (only animate current buffer and others only when switching windows?)
+* [x] interactive first start isn't animated when calling `global-...` because it starts the modes for each buffer and `interactive-p` fails for that (only animate current buffer and others only when switching windows?)
 * [ ] when executing `M-x command` that shows a suggestion "You can run the command ...
-with ...", recentering occurs after the message disappears (issue with `post-command-hook`?)
-* [ ] with `ccm-vpos-up`/`ccm-vpos-down` set `vpos` is not remembered after buffer switch
-* [ ] with `text-scale` not all lines are visible (middle line -- eg 10 of 20 -- is not centered)
+  with ...", recentering occurs after the message disappears (issue with `post-command-hook`?)
+* [x] with `ccm-vpos-up`/`ccm-vpos-down` set `vpos` is not remembered after buffer switch
+* [x] with `text-scale` not all lines are visible (middle line -- eg 10 of 20 -- is not centered)
+* [ ] recalculate after customise position
 
 == More
 
-* [ ] recalculate cursor position on some events like after `(default-text-scale)` if necessary (hook for text properties?)
-* [ ] (`while-no-input` ...), see `(describe-variable 'post-command-hook)`
+* [x] recalculate cursor position on some events like after `(default-text-scale)` if necessary (hook for text properties?)
+* [x] (`while-no-input` ...), see `(describe-variable 'post-command-hook)`
 * [ ] rename file to centered-cursor.el? would correspond more to standards
 * [x] reconsider customization for cursor position:
 ** no more `ccm-vpos-inverted` and more options: Center, Golden ratio, Golden ration from botton, Percentage, Lines from top or bottom
 ** simple symbol or integer or float for saving (and more robust with wrong customizations)
-* [ ] when switching window, update vpos, maybe animation
-* [ ] cursor position as window parameter instead of buffer local?
-* [ ] use `vertical-motion`?
-* [ ] `seq-do` instead of `mapcar` where possible
-* [ ] when changing pos, save as new default? (if customized → new defcustom)
+* [x] when switching window, update vpos, maybe animation
 * [ ] clicking scrollbar arrows should move cursor
+* [ ] default key bindings (C-M-+) not optimal for terminal: maybe C-c c + (also see `text-scale-decrease` for repeat?)
+* [ ] Customise list of modes (files/buffer names?) where mode is not enabled
+
+== Ideas
+* [ ] when changing pos, save as new default? (if customized → new defcustom)
 * [ ] maybe: leave methods/context in sight (see `reposition-window`)
+* [ ] cursor position as window parameter instead of buffer local?
+      (different positions for different windows of the same buffer possible)
+* [ ] experiment with pixel-based movement/recentering
 
-== Code hygiene
+== Code hygiene & test
 
-* [ ] replace tabs with spaces (`untabify`)
-* [ ] use `package-lint`, `checkdoc` etc. on source file
-* [ ] test with emacs version < 28
-* [ ] test other packaging tools (el-get, cask)
+* replace tabs with spaces (`untabify`)
+* use `package-lint`, `checkdoc` etc. on source file
+* test with emacs version < 28
+* test other packaging tools (el-get, cask)
 
 == Combatibility (with other packages etc.)
 
-* [ ] package `default-text-scale`
-* [ ] command `text-scale-increase` etc.
+* [x] package `default-text-scale`
+* [x] command `text-scale-increase` etc.
 * [ ] package `undo-tree`
 * [ ] consider `recenter-top-bottom`?
 * [ ] https://emacs.stackexchange.com/questions/36094/using-ggtags-tag-lookup-along-with-centered-cursor-mode

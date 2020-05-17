@@ -1,4 +1,4 @@
-;;; centered-cursor-mode.el --- Cursor stays vertically centered -*- lexical-binding: t; -*-
+;;; centered-cursor-mode.el --- Cursor stays vertically centered -*- lexical-binding: nil; -*-
 
 ;; Copyright (C) 2007  André Riemann
 
@@ -61,7 +61,14 @@
 ;; Alternatives:
 ;; -scroll-preserve-screen-position: only works when scrolling, i.e. when point
 ;;     leaving window (pgup, pgdn)
-;; - scroll-margin, maximum-scroll-margin: maximum is max. 0.5 and leaves 2-3 lines tolerance
+;; - scroll-margin, maximum-scroll-margin: maximum is max. 0.5 and leaves 2-3 lines
+;;     tolerance
+;; - scroll-lock-mode
+;; - (setq maximum-scroll-margin 0.5
+;;         scroll-margin 99999
+;;         scroll-preserve-screen-position t
+;;         scroll-conservatively 0)
+;; - ...
 
 ;;; Change Log:
 ;; 2020-TODO andre-r
@@ -143,11 +150,11 @@
   (require 'pulse nil 'noerror)
   (require 'seq)) ; TODO wenn emacs < 24.1
 
-(make-obsolete-variable 'ccm-step-size "Animation was removed." "0.7")
-(make-obsolete-variable 'ccm-step-delay "Animation was removed." "0.7")
-(make-obsolete-variable 'ccm-vpos-init "Now centered-cursor-position, but with another structure." "0.7")
-(make-obsolete-variable 'ccm-recenter-at-end-of-file "Defcustom removed for performance reasons." "0.7")
-(make-obsolete-variable 'ccm-inhibit-centering-when nil "0.7") ; was defcustom, TODO ; alias possible?
+(make-obsolete-variable 'ccm-step-size "Animation was replaced by line highlighting" "0.7")
+(make-obsolete-variable 'ccm-step-delay "Animation was replaced by line highlighting" "0.7")
+(make-obsolete-variable 'ccm-vpos-init "Replaced by new variable centered-cursor-position, but it has another structure" "0.7")
+(make-obsolete-variable 'ccm-recenter-at-end-of-file "Defcustom removed for performance reasons" "0.7")
+(make-obsolete-variable 'ccm-inhibit-centering-when nil "0.7") ; was defcustom, TODO alias possible?
 (define-obsolete-variable-alias 'ccm-ignored-commands 'centered-cursor-ignored-commands "0.7")
 (define-obsolete-function-alias 'ccm-ignored-command-p 'centered-cursor--ignored-command-p "0.7")
 (define-obsolete-function-alias 'ccm-mouse-drag-movement-p 'centered-cursor--mouse-drag-movement-p "0.7")
@@ -172,18 +179,16 @@ Instead the cursor the text moves around the cursor."
   :type '(choice (string :tag "Custom string" :format "%{%t%}: %v" :size 10)
                  (const :tag "None" :value "")))
 
-
-(define-widget 'centered-cursor--command-widget 'function
+;; not inherited from 'function, because allowing commands that are unknown
+;; at the moment
+(define-widget 'centered-cursor--command-widget 'symbol
   "A command."
   :tag "Command"
+  ;; completion for commands (but other symbols are allowed)
   :completions (apply-partially #'completion-table-with-predicate
                                 obarray #'commandp 'strict)
-  :match-alternatives '(commandp)
-  :validate (lambda (widget)
-              (unless (commandp (widget-value widget))
-                (widget-put widget :error (format "Invalid command: %S"
-                                                  (widget-value widget)))
-                widget)))
+  :match-alternatives '(commandp)) ;  :match-alternatives necessary? adopted and
+                                   ;  adjusted from function widget
 
 (defcustom centered-cursor-ignored-commands '(mouse-drag-region
                                mouse-set-region
@@ -221,9 +226,7 @@ jumping to the center."
                                           (let ((value (widget-value widget)))
                                             (when (or (< value 0.0)
                                                       (> value 1.0))
-                                              (widget-put widget :error (format
-                                                                         "Ratio must
-be between (including) 0.0 and 1.0: %S" value))
+                                              (widget-put widget :error (format "Ratio must be between (including) 0.0 and 1.0: %S" value))
                                               widget)))))
                  (cons :tag "Lines from top"
                        :format "%t: %v\n"
@@ -233,8 +236,8 @@ be between (including) 0.0 and 1.0: %S" value))
                                 :size 5
                                 :validate (lambda (widget)
                                             (let ((value (widget-value widget)))
-                                              (when (< value 0)
-                                                (widget-put widget :error (format "Value must be positive: %S" values))
+                                              (when (< value 1)
+                                                (widget-put widget :error (format "Value must be greater than 0: %S" value))
                                                 widget)))))
                  (cons :tag "Lines from bottom"
                        :format "%t: %v\n"
@@ -244,15 +247,14 @@ be between (including) 0.0 and 1.0: %S" value))
                                 :size 5
                                 :validate (lambda (widget)
                                             (let ((value (widget-value widget)))
-                                              (when (< value 0)
-                                                (widget-put widget :error (format "Value must be positive: %S" values))
+                                              (when (< value 1)
+                                                (widget-put widget :error (format "Value must be greater than 0: %S" value))
                                                 widget)))))
                  (cons :tag "Custom function"
                        :format "%t: %v"
                        (const :format "" custom-function)
                        (function :format "%v"))))
 (make-variable-buffer-local 'centered-cursor-position)
-
 
 ;;; Variables
 
@@ -267,16 +269,19 @@ If any of these return t, recentering is cancelled.")
 
 (defun centered-cursor--ignored-command-p ()
   "Check if the last command was one listed in `centered-cursor-ignored-commands'."
-  (member this-command centered-cursor-ignored-commands))
+  (when (member this-command centered-cursor-ignored-commands)
+    (centered-cursor--log "ignored: %s" this-command)
+    t))
 
 (defun centered-cursor--mouse-drag-movement-p ()
   "Check if the last input event corresponded to a mouse drag event."
-  (mouse-movement-p last-command-event))
-
+  (when (mouse-movement-p last-command-event)
+    (centered-cursor--log "ignored mouse")
+    t))
 
 ;;; Keymap and keys
 
-(defvar centered-cursor-keymap (make-sparse-keymap) "The keymap for Centered Cursor mode.")
+(defvar centered-cursor-keymap (make-sparse-keymap) "The keymap for Centered-Cursor mode.")
 
 (defvar centered-cursor-bindings
   '((define-key centered-cursor-keymap (kbd "C-M--") 'centered-cursor-raise-position-manually)
@@ -293,70 +298,6 @@ be done before calling command `centered-cursor-bindings'.")
 Called to apply default key bindings."
   (interactive)
   (eval (cons 'progn centered-cursor-bindings)))
-
-;;; Overriding functions and compatibility
-
-(define-key centered-cursor-keymap [remap scroll-down-command] 'centered-cursor-scroll-down)
-(define-key centered-cursor-keymap [remap scroll-up-command] 'centered-cursor-scroll-up)
-
-(defun centered-cursor-View-scroll-page-backward (&optional lines)
-  "Scroll down LINES lines.
-Replaces `View-scroll-page-backward' in Centered Cursor mode for
-compatibility."
-  (interactive "P")
-  (let ((lines (or lines (view-page-size-default view-page-size))))
-    (centered-cursor-scroll-down lines)))
-(define-key centered-cursor-keymap [remap View-scroll-page-backward] 'centered-cursor-View-scroll-page-backward)
-
-(defun centered-cursor-View-scroll-page-forward (&optional lines)
-  "Scroll up LINES lines.
-Replaces `View-scroll-page-forward' in Centered Cursor mode for
-compatibility."
-  (interactive "P")
-  (let ((lines (or lines (view-page-size-default view-page-size))))
-    (centered-cursor-scroll-up lines)))
-(define-key centered-cursor-keymap [remap View-scroll-page-forward] 'centered-cursor-View-scroll-page-forward)
-
-(defun centered-cursor-Info-scroll-down--around (orig-fun)
-  "Around advice for `Info-scroll-down'.
-Make `Info-scroll-down' -- called by ORIG-FUN -- use
-`centered-cursor-scroll-down' instead of `scroll-down'. Error
-handling is still necessary to assure going back a node works."
-  (cl-letf (((symbol-function 'scroll-down) 'centered-cursor-scroll-down))
-    (condition-case ex
-        (funcall orig-fun)
-      (user-error (centered-cursor-scroll-down)))))
-(advice-add 'Info-scroll-down :around #'centered-cursor-Info-scroll-down--around)
-
-(defun centered-cursor-Info-scroll-up--around (orig-fun)
-  "Around advice for `Info-scroll-up'.
-Make `Info-scroll-up' -- called by ORIG-FUN -- use
-`centered-cursor-scroll-up' instead of `scroll-up'."
-  (cl-letf (((symbol-function 'scroll-up) 'centered-cursor-scroll-up))
-      (funcall orig-fun)))
-(advice-add 'Info-scroll-up :around #'centered-cursor-Info-scroll-up--around)
-
-(defvar-local centered-cursor--original-mwheel-scroll-up-function 'scroll-up)
-(defvar-local centered-cursor--original-mwheel-scroll-down-function 'scroll-down)
-
-(defun centered-cursor--set-local-mwheel-scroll-functions ()
-  "Set variables that do the scrolling in package `mwheel.el'.
-`mwheel-scroll-up-function' and `mwheel-scroll-down-function' are
-  set to `next-line' and `previous-line' respectively."
-  (setq centered-cursor--original-mwheel-scroll-up-function
-        mwheel-scroll-up-function)
-  (setq centered-cursor--original-mwheel-scroll-down-function
-        mwheel-scroll-down-function)
-  (setq mwheel-scroll-up-function 'next-line)
-  (setq mwheel-scroll-down-function 'previous-line))
-
-(defun centered-cursor--reset-local-mwheel-scroll-functions ()
-  "Reset variables to original that do the scrolling in package `mwheel.el'.
-Previously set by `centered-cursor--set-local-mwheel-scroll-functions'."
-  (setq mwheel-scroll-up-function
-        centered-cursor--original-mwheel-scroll-up-function)
-  (setq mwheel-scroll-down-function
-        centered-cursor--original-mwheel-scroll-down-function))
 
 ;;; Setting position manually
 
@@ -410,35 +351,37 @@ used again for recentering."
 ;;; Scrolling/cursor movement
 
 (defun centered-cursor--default-scroll-amount ()
-  "Default scroll amount for `centered-cursor--scroll' is a near full screen.
+  "Default scroll amount for `centered-cursor--scroll-command' is a near full screen.
 It is calulated by `centered-cursor--screen-lines' minus `next-screen-context-lines'.
 See also `scroll-down-command'."
   (- (centered-cursor--screen-lines) next-screen-context-lines))
 
-(defun centered-cursor--scroll (arg prefix-func)
+(defun centered-cursor--scroll-command (arg direction)
   "Internal function for scrolling up or down.
-Scroll ARG lines, direction depending on PREFIX-FUNC.
-Used by `centered-cursor-scroll-up' and
-`centered-cursor-scroll-down' for page up or down and mouse
-wheel. Uses `line-move'."
-  (let ((amt (apply prefix-func
-                    (list (or arg
-                              (centered-cursor--default-scroll-amount))))))
-    (line-move amt)))
+Scroll ARG lines, direction depending on PREFIX-FUNC. Used by
+`centered-cursor-scroll-up' and `centered-cursor-scroll-down' for
+page up or down and mouse wheel. Uses `line-move'."
+  (line-move (cond
+              ((null arg)
+               (* direction (centered-cursor--default-scroll-amount)))
+              ((eq arg #'-)
+               (* (- direction) (centered-cursor--default-scroll-amount)))
+              (t
+               (* direction arg)))))
 
 ;;;###autoload
 (defun centered-cursor-scroll-up (&optional arg)
   "Replacement for `scroll-up'.
 Instead of scrolling, the cursor if moved down linewise by ARG."
-  (interactive "P")
-  (centered-cursor--scroll arg #'+))
+  (interactive "^P")
+  (centered-cursor--scroll-command arg 1))
 
 ;;;###autoload
 (defun centered-cursor-scroll-down (&optional arg)
   "Replacement for `scroll-down'.
 Instead of scrolling, the cursor is moved up linewise by ARG."
-  (interactive "P")
-  (centered-cursor--scroll arg #'-))
+  (interactive "^P")
+  (centered-cursor--scroll-command arg -1))
 
 ;;; Recentering
 
@@ -468,25 +411,21 @@ to the customisation in `centered-cursor-position'."
                   (if (consp position) ; e.g. (ratio . 0.4)
                       (let ((key (car position))
                             (value (cdr position)))
-                        (cond
-                         ((eq key 'ratio)
-                          (setq value (centered-cursor--constrain value 0.0 1.0))
-                          (round (* height value)))
-                         ((eq key 'lines-from-top)
-                          (setq value (centered-cursor--constrain value 0 height))
-                          value)
-                         ((eq key 'lines-from-bottom)
-                          (setq value (centered-cursor--constrain value 0 height))
-                          (- height value))
-                         ((eq key 'custom-function)
+                        (case key
+                         ('ratio
+                          (round (* height
+                                    (centered-cursor--constrain value 0.0 1.0))))
+                         ('lines-from-top
+                          (centered-cursor--constrain (1- value) 0 (1- height)))
+                         ('lines-from-bottom
+                          (- height (centered-cursor--constrain value 0 height)))
+                         ('custom-function
                           (setq value (funcall value))
                           (when (not (numberp value))
                             (signal 'wrong-type-argument value))
-                          (setq value
-                                (if (integerp value)
-                                    (centered-cursor--constrain value 0 height)
-                                  (centered-cursor--constrain value 0.0 1.0)))
-                          value)))
+                          (if (integerp value)
+                              (centered-cursor--constrain value 0 height)
+                            (centered-cursor--constrain value 0.0 1.0)))))
                     ;; else position not cons but const
                     (cond
                      ((eq position 'centered)
@@ -518,21 +457,24 @@ Return MIN if VALUE is less than MIN."
 ;;;###autoload
 (defun centered-cursor-recenter (&optional first-start-p)
   "TODO"
-  (condition-case ex ; exception handling
+  ;; (condition-case ex ; exception handling
       (when centered-cursor-mode
-        (if (seq-some #'funcall centered-cursor--inhibit-centering-when)
+        (if (centered-cursor--inhibit-centering-p)
             (progn
               (centered-cursor--log-top-values)
               (centered-cursor--log "ignored %s" this-command))
           (centered-cursor--do-recenter first-start-p)))
-    (error (prog1 nil
-             (centered-cursor-mode 0)
-             (message "Centered Cursor mode disabled in buffer %s due to error: %s"
-                      (buffer-name) ex)))))
+    ;; (error (prog1 nil
+             ;; (centered-cursor-mode 0)
+             ;; (message "Centered-Cursor mode disabled in buffer %s due to error: %s"
+                      ;; (buffer-name) ex)))))
+)
+(defun centered-cursor--inhibit-centering-p ()
+  (seq-some #'funcall centered-cursor--inhibit-centering-when))
 
 (defun centered-cursor--do-recenter (&optional first-start-p)
   "TODO"
-  (when (equal (current-buffer) (window-buffer (selected-window)))
+  (when (equal (current-buffer) (window-buffer (selected-window))) ;; TODO or mouse scrolls (doesn't have to be current buffer)
     (centered-cursor--log-top-values)
     ;; (centered-cursor--log "--do-recenter")
     (unless centered-cursor--calculated-position
@@ -561,82 +503,103 @@ Return MIN if VALUE is less than MIN."
 (defun centered-cursor--screen-lines ()
   (floor (window-screen-lines)))
 
-;;; Logging
+;;; Overriding functions and compatibility
 
-(defconst centered-cursor--log-buffer-name "*centered-cursor-log*")
+(define-key centered-cursor-keymap [remap scroll-down-command] 'centered-cursor-scroll-down)
+(define-key centered-cursor-keymap [remap scroll-up-command] 'centered-cursor-scroll-up)
+(define-key centered-cursor-keymap [remap scroll-bar-scroll-down] 'centered-cursor-scroll-down)
+(define-key centered-cursor-keymap [remap scroll-bar-scroll-up] 'centered-cursor-scroll-up)
 
-(defun centered-cursor--log-top (string &rest objects)
-  "Internal log function for logging variables.
-STRING and OBJECTS are formatted by `format'.
- See `centered-cursor--log-top-values'."
-  (when centered-cursor--log-p
-    (let ((log-buffer (or (get-buffer centered-cursor--log-buffer-name)
-                          (generate-new-buffer centered-cursor--log-buffer-name))))
-      (with-current-buffer log-buffer
-        (goto-char (point-min))
-        (delete-region (point-min)
-                       (1+ (progn
-                             (search-forward (char-to-string ?\^L) nil t)
-                             (point))))
-        (insert (apply #'format
-                       (concat string (char-to-string ?\^L) "\n")
-                       objects))))))
+(defun centered-cursor-View-scroll-page-backward (&optional lines)
+  "Scroll down LINES lines.
+Replaces `View-scroll-page-backward' in Centered-Cursor mode for
+compatibility."
+  (interactive "P")
+  (let ((lines (or lines (view-page-size-default view-page-size))))
+    (centered-cursor-scroll-down lines)))
+(define-key centered-cursor-keymap [remap View-scroll-page-backward] 'centered-cursor-View-scroll-page-backward)
 
-(defun centered-cursor--log (string &rest objects)
-  "Internal log function for logging messages.
-STRING and OBJECTS are formatted by `format'."
-  (when centered-cursor--log-p
-    (let ((log-buffer
-           (let ((name "*centered-cursor-log*"))
-             (or (get-buffer name)
-                 (generate-new-buffer name))))
-          (buffer (buffer-name))
-          (message (apply #'format (concat string "\n") objects))
-          hlinepos
-          hlineline)
-      (with-current-buffer log-buffer
-        (goto-char (point-min))
-        (setq hlinepos
-              ;; horizontal line (^L) inserted by --log-top
-              (or (search-forward (concat (char-to-string ?\^L) "\n") nil t)
-                  ;; or no line
-                  (point-min)))
-        (setq hlineline (line-number-at-pos hlinepos))
-        (while (> (count-lines (point-min) (point-max))
-                  (+ hlineline 20))
-          (goto-char hlinepos)
-          (delete-region (line-beginning-position 1) (line-beginning-position 2)))
-        (goto-char (point-max))
-        (insert (concat (format-time-string "%F %T") " [" buffer "] " message))))))
+(defun centered-cursor-View-scroll-page-forward (&optional lines)
+  "Scroll up LINES lines.
+Replaces `View-scroll-page-forward' in Centered-Cursor mode for
+compatibility."
+  (interactive "P")
+  (let ((lines (or lines (view-page-size-default view-page-size))))
+    (centered-cursor-scroll-up lines)))
+(define-key centered-cursor-keymap [remap View-scroll-page-forward] 'centered-cursor-View-scroll-page-forward)
 
-(defun centered-cursor--log-top-values ()
-  (centered-cursor--log-top
-   "Values before recentering:
-==========================
+;;
 
-last-command-event:  %s
----> mouse-event-p:  %s
-this-command:        %s
-last-command:        %s
-visual-text-lines:   %s
-centered-cursor-position: %s
-delta: %s
+(defun centered-cursor-replace-scroll-down--around (orig-fun &optional args)
+  (cl-letf (((symbol-function 'scroll-down) 'centered-cursor-scroll-down))
+    (condition-case ex
+        (funcall orig-fun args)
+      (error (centered-cursor-scroll-down)))))
+(advice-add 'Info-scroll-down :around #'centered-cursor-replace-scroll-down--around)
+(advice-add 'evil-scroll-page-up :around #'centered-cursor-replace-scroll-down--around)
+;; (advice-add 'scroll-bar-toolkit-scroll :around #'centered-cursor-replace-scroll-down--around)
 
-window-end: %s
-point-max:  %s
-"
-   last-command-event
-   (mouse-event-p last-command-event)
-   this-command
-   last-command
+(defun centered-cursor-replace-scroll-up--around (orig-fun &optional args)
+  (cl-letf (((symbol-function 'scroll-up) 'centered-cursor-scroll-up))
+    (condition-case ex
+        (funcall orig-fun args)
+      (error (centered-cursor-scroll-up))))) ;; error see centered-cursor-Info-scroll-down--around
+(advice-add 'Info-scroll-up :around #'centered-cursor-replace-scroll-up--around)
+(advice-add 'evil-scroll-page-down :around #'centered-cursor-replace-scroll-up--around)
+;; (advice-add 'scroll-bar-toolkit-scroll :around #'centered-cursor-replace-scroll-up--around) ;; doesn't work completely
 
-   (centered-cursor--screen-lines)
 
-   centered-cursor--calculated-position
-   (centered-cursor--visual-line-diff centered-cursor--old-point (point))
+;; (defun centered-cursor-Info-scroll-down--around (orig-fun)
+  ;; "Around advice for `Info-scroll-down'.
+;; Make `Info-scroll-down' -- called by ORIG-FUN -- use
+;; `centered-cursor-scroll-down' instead of `scroll-down'. Error
+;; handling is still necessary to assure going back a node works."
+  ;; (cl-letf (((symbol-function 'scroll-down) 'centered-cursor-scroll-down))
+    ;; (condition-case ex
+        ;; (funcall orig-fun)
+      ;; (user-error (centered-cursor-scroll-down)))))
+;; (advice-add 'Info-scroll-down :around #'centered-cursor-Info-scroll-down--around)
 
-   (window-end)
-   (point-max)))
+;; (defun centered-cursor-Info-scroll-up--around (orig-fun)
+  ;; "Around advice for `Info-scroll-up'.
+;; Make `Info-scroll-up' -- called by ORIG-FUN -- use
+;; `centered-cursor-scroll-up' instead of `scroll-up'."
+  ;; (cl-letf (((symbol-function 'scroll-up) 'centered-cursor-scroll-up))
+      ;; (funcall orig-fun)))
+;; (advice-add 'Info-scroll-up :around #'centered-cursor-Info-scroll-up--around)
+
+;;
+
+(defvar-local centered-cursor--original-mwheel-scroll-up-function 'scroll-up)
+(defvar-local centered-cursor--original-mwheel-scroll-down-function 'scroll-down)
+
+(defun centered-cursor--set-mwheel-scroll-functions ()
+  "Set variables that do the scrolling in package `mwheel.el'.
+`mwheel-scroll-up-function' and `mwheel-scroll-down-function' are
+  set to `next-line' and `previous-line' respectively."
+  (setq centered-cursor--original-mwheel-scroll-up-function
+        mwheel-scroll-up-function)
+  (setq centered-cursor--original-mwheel-scroll-down-function
+        mwheel-scroll-down-function)
+  (setq mwheel-scroll-up-function 'next-line)
+  (setq mwheel-scroll-down-function 'previous-line))
+
+(defun centered-cursor--reset-mwheel-scroll-functions ()
+  "Reset variables to original that do the scrolling in package `mwheel.el'.
+Previously set by `centered-cursor--set-mwheel-scroll-functions'."
+  (setq mwheel-scroll-up-function
+        centered-cursor--original-mwheel-scroll-up-function)
+  (setq mwheel-scroll-down-function
+        centered-cursor--original-mwheel-scroll-down-function))
+
+
+
+
+;; Testing:
+
+;; doesn't work
+;; (defvar-local scroll-up (symbol-function 'centered-cursor-scroll-up))
+;; (defvar-local scroll-down (symbol-function 'centered-cursor-scroll-down))
 
 ;;; Hooks
 
@@ -662,13 +625,14 @@ List of cons cells in format (hook-variable . function).")
         centered-cursor--hook-alist))
 
 (defun centered-cursor-mode-unload-function ()
-  "Cancel all Centered Cursor modes in buffers.
+  "Cancel all Centered-Cursor modes in buffers.
 Called by function `unload-feature'."
   (centered-cursor--log "--mode-unload-function")
   (global-centered-cursor-mode 0))
 
 (defun centered-cursor--post-command-hook ()
   "Called after every command."
+  ;; (while-no-input (centered-cursor-recenter)))
   (centered-cursor-recenter))
 
 (defun centered-cursor--window-configuration-change-hook ()
@@ -677,12 +641,92 @@ After resizing a window the position has to be recalculated."
   (centered-cursor-calculate-position)
   (centered-cursor-recenter))
 
+;;; Logging
+
+(defconst centered-cursor--log-buffer-name "*centered-cursor-log*")
+
+(defun centered-cursor--log-top (string &rest objects)
+  "Internal log function for logging variables.
+STRING and OBJECTS are formatted by `format'. Makes sure a page
+break (^L) is inserted after. Logged events are logged below page
+break by function `centered-cursor--log'. See
+`centered-cursor--log-top-values' for values logged on top."
+  (when centered-cursor--log-p
+    (let ((log-buffer (or (get-buffer centered-cursor--log-buffer-name)
+                          (generate-new-buffer centered-cursor--log-buffer-name))))
+      (with-current-buffer log-buffer
+        (goto-char (point-min))
+        (delete-region (point-min)
+                       (progn
+                         (search-forward-regexp (concat "^" (char-to-string ?\^L) "$") nil t)
+                         (vertical-motion 1)
+                         (point)))
+        (insert (apply #'format
+                       (concat string (char-to-string ?\^L) "\n")
+                       objects))))))
+
+(defun centered-cursor--log (string &rest objects)
+  "Internal log function for logging messages.
+STRING and OBJECTS are formatted by `format'."
+  (when centered-cursor--log-p
+    (let ((log-buffer
+           (let ((name "*centered-cursor-log*"))
+             (or (get-buffer name)
+                 (generate-new-buffer name))))
+          (buffer (buffer-name))
+          (max-log-lines 30)
+          (message (apply #'format (concat string "\n") objects))
+          hlinepos
+          hlineline)
+      (with-current-buffer log-buffer
+        (goto-char (point-min))
+        (setq hlinepos
+              ;; horizontal line (^L) inserted by --log-top
+              (or (search-forward (concat (char-to-string ?\^L) "\n") nil t)
+                  ;; or no line
+                  (point-min)))
+        (setq hlineline (line-number-at-pos hlinepos))
+        (while (> (count-lines (point-min) (point-max))
+                  (+ hlineline max-log-lines))
+          (goto-char hlinepos)
+          (delete-region (line-beginning-position 1) (line-beginning-position 2)))
+        (goto-char (point-max))
+        (insert (concat (format-time-string "%F %T") " [" buffer "] " message))))))
+
+(defun centered-cursor--log-top-values ()
+  (centered-cursor--log-top
+   "Values before recentering:
+==========================
+
+last-command-event:  %s
+---> mouse-event-p:  %s
+this-command:        %s
+last-command:        %s
+visual-text-lines:   %s
+centered-cursor-position: %s
+delta: %s
+window-end: %s
+point-max:  %s
+"
+   last-command-event
+   (mouse-event-p last-command-event)
+   this-command
+   last-command
+
+   (centered-cursor--screen-lines)
+
+   centered-cursor--calculated-position
+   (centered-cursor--visual-line-diff centered-cursor--old-point (point))
+
+   (window-end)
+   (point-max)))
+
 ;;; Mode definition and start
 
 (defun centered-cursor-turn-on ()
-  "Try to turn on Centered Cursor mode.
+  "Try to turn on Centered-Cursor mode.
 Called when calling command `global-centered-cursor-mode'.
-Centered Cursor mode will not start in minibuffer,
+Centered-Cursor mode will not start in minibuffer,
 *centered-cursor-log* (defined in variable
 `centered-cursor--log-buffer-name') and hidden buffers."
   ;; ignore mode in minibuffer, *centered-cursor-log* buffer or invisible buffers
@@ -693,7 +737,7 @@ Centered Cursor mode will not start in minibuffer,
     (centered-cursor-mode 1)))
 
 (defun centered-cursor--first-start ()
-  "Executed when starting Centered Cursor mode.
+  "Executed when starting Centered-Cursor mode.
 Recenters initially and -- in the current buffer -- highlights
 current line."
   (setq centered-cursor--old-point (point))
@@ -718,14 +762,13 @@ Key bindings:
   :keymap centered-cursor-keymap
   (cond
    (centered-cursor-mode
-    ;; (centered-cursor--first-start (called-interactively-p 'interactive))
     (centered-cursor--first-start)
     (centered-cursor--add-hooks)
-    (centered-cursor--set-local-mwheel-scroll-functions)
+    (centered-cursor--set-mwheel-scroll-functions)
     (centered-cursor--log "Centered-Cursor mode enabled"))
    (t
     (centered-cursor--remove-hooks)
-    (centered-cursor--reset-local-mwheel-scroll-functions)
+    (centered-cursor--reset-mwheel-scroll-functions)
     (centered-cursor--log "Centered-Cursor mode disabled"))))
 
 ;;;###autoload
