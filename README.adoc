@@ -7,6 +7,8 @@ The vertical position can be customized.
 
 The code is still in development (see link:TODO.adoc[todo list]).
 
+Also see the development branch link:https://github.com/andre-r/centered-cursor-mode.el/tree/dev[] which contains several changes. It is faster and has better customization. But it lacks one feature for now: because of performance issues, at the end of the buffer the cursor it is still recentered, so that the text does not align with the end of the window.
+
 
 == Technical
 
