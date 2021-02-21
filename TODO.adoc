@@ -25,7 +25,7 @@
 * [ ] Customise list of modes (files/buffer names?) where mode is not enabled
 
 == Ideas
-* [ ] when changing pos, save as new default? (if customized → new defcustom)
+* [ ] when manually changing pos, save as new default? (if customized → new defcustom)
 * [ ] maybe: leave methods/context in sight (see `reposition-window`)
 * [ ] cursor position as window parameter instead of buffer local?
       (different positions for different windows of the same buffer possible)
@@ -49,3 +49,4 @@
 * [ ] `move-to-window-line-top-bottom`
 * [ ] `text-scale`
 * [ ] with line spacing
+* [ ] `pixel-scroll-mode`
