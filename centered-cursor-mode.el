@@ -173,7 +173,7 @@ Instead the cursor the text moves around the cursor."
   :link '(url-link "https://github.com/andre-r/centered-cursor-mode.el"))
 
 (defcustom centered-cursor-lighter " ¢-DEV"
- "Lighter for mode line."
+  "Lighter for mode line."
   :group 'centered-cursor
   :tag "Mode line symbol"
   :type '(choice (string :tag "Custom string" :format "%{%t%}: %v" :size 10)
@@ -412,20 +412,20 @@ to the customisation in `centered-cursor-position'."
                       (let ((key (car position))
                             (value (cdr position)))
                         (case key
-                         ('ratio
-                          (round (* height
-                                    (centered-cursor--constrain value 0.0 1.0))))
-                         ('lines-from-top
-                          (centered-cursor--constrain (1- value) 0 (1- height)))
-                         ('lines-from-bottom
-                          (- height (centered-cursor--constrain value 0 height)))
-                         ('custom-function
-                          (setq value (funcall value))
-                          (when (not (numberp value))
-                            (signal 'wrong-type-argument value))
-                          (if (integerp value)
-                              (centered-cursor--constrain value 0 height)
-                            (centered-cursor--constrain value 0.0 1.0)))))
+                          ('ratio
+                           (round (* height
+                                     (centered-cursor--constrain value 0.0 1.0))))
+                          ('lines-from-top
+                           (centered-cursor--constrain (1- value) 0 (1- height)))
+                          ('lines-from-bottom
+                           (- height (centered-cursor--constrain value 0 height)))
+                          ('custom-function
+                           (setq value (funcall value))
+                           (when (not (numberp value))
+                             (signal 'wrong-type-argument value))
+                           (if (integerp value)
+                               (centered-cursor--constrain value 0 height)
+                             (centered-cursor--constrain value 0.0 1.0)))))
                     ;; else position not cons but const
                     (cond
                      ((eq position 'centered)
@@ -458,23 +458,24 @@ Return MIN if VALUE is less than MIN."
 (defun centered-cursor-recenter (&optional first-start-p)
   "TODO"
   ;; (condition-case ex ; exception handling
-      (when centered-cursor-mode
-        (if (centered-cursor--inhibit-centering-p)
-            (progn
-              (centered-cursor--log-top-values)
-              (centered-cursor--log "ignored %s" this-command))
-          (centered-cursor--do-recenter first-start-p)))
-    ;; (error (prog1 nil
-             ;; (centered-cursor-mode 0)
-             ;; (message "Centered-Cursor mode disabled in buffer %s due to error: %s"
-                      ;; (buffer-name) ex)))))
-)
+  (when centered-cursor-mode
+    (if (centered-cursor--inhibit-centering-p)
+        (progn
+          (centered-cursor--log-top-values)
+          (centered-cursor--log "ignored %s" this-command))
+      (centered-cursor--do-recenter first-start-p)))
+  ;; (error (prog1 nil
+  ;; (centered-cursor-mode 0)
+  ;; (message "Centered-Cursor mode disabled in buffer %s due to error: %s"
+  ;; (buffer-name) ex)))))
+  )
 (defun centered-cursor--inhibit-centering-p ()
   (seq-some #'funcall centered-cursor--inhibit-centering-when))
 
 (defun centered-cursor--do-recenter (&optional first-start-p)
   "TODO"
   (when (equal (current-buffer) (window-buffer (selected-window))) ;; TODO or mouse scrolls (doesn't have to be current buffer)
+    ;; (redisplay) ; flickers, but only after redisplay window-end is current, see centered-cursor--log
     (centered-cursor--log-top-values)
     ;; (centered-cursor--log "--do-recenter")
     (unless centered-cursor--calculated-position
@@ -550,47 +551,48 @@ compatibility."
 
 
 ;; (defun centered-cursor-Info-scroll-down--around (orig-fun)
-  ;; "Around advice for `Info-scroll-down'.
+;; "Around advice for `Info-scroll-down'.
 ;; Make `Info-scroll-down' -- called by ORIG-FUN -- use
 ;; `centered-cursor-scroll-down' instead of `scroll-down'. Error
 ;; handling is still necessary to assure going back a node works."
-  ;; (cl-letf (((symbol-function 'scroll-down) 'centered-cursor-scroll-down))
-    ;; (condition-case ex
-        ;; (funcall orig-fun)
-      ;; (user-error (centered-cursor-scroll-down)))))
+;; (cl-letf (((symbol-function 'scroll-down) 'centered-cursor-scroll-down))
+;; (condition-case ex
+;; (funcall orig-fun)
+;; (user-error (centered-cursor-scroll-down)))))
 ;; (advice-add 'Info-scroll-down :around #'centered-cursor-Info-scroll-down--around)
 
 ;; (defun centered-cursor-Info-scroll-up--around (orig-fun)
-  ;; "Around advice for `Info-scroll-up'.
+;; "Around advice for `Info-scroll-up'.
 ;; Make `Info-scroll-up' -- called by ORIG-FUN -- use
 ;; `centered-cursor-scroll-up' instead of `scroll-up'."
-  ;; (cl-letf (((symbol-function 'scroll-up) 'centered-cursor-scroll-up))
-      ;; (funcall orig-fun)))
+;; (cl-letf (((symbol-function 'scroll-up) 'centered-cursor-scroll-up))
+;; (funcall orig-fun)))
 ;; (advice-add 'Info-scroll-up :around #'centered-cursor-Info-scroll-up--around)
 
 ;;
 
-(defvar-local centered-cursor--original-mwheel-scroll-up-function 'scroll-up)
-(defvar-local centered-cursor--original-mwheel-scroll-down-function 'scroll-down)
+(when (boundp mouse-wheel-mode)
+  (defvar-local centered-cursor--original-mwheel-scroll-up-function 'scroll-up)
+  (defvar-local centered-cursor--original-mwheel-scroll-down-function 'scroll-down)
 
-(defun centered-cursor--set-mwheel-scroll-functions ()
-  "Set variables that do the scrolling in package `mwheel.el'.
+  (defun centered-cursor--set-mwheel-scroll-functions ()
+    "Set variables that do the scrolling in package `mwheel.el'.
 `mwheel-scroll-up-function' and `mwheel-scroll-down-function' are
   set to `next-line' and `previous-line' respectively."
-  (setq centered-cursor--original-mwheel-scroll-up-function
-        mwheel-scroll-up-function)
-  (setq centered-cursor--original-mwheel-scroll-down-function
-        mwheel-scroll-down-function)
-  (setq mwheel-scroll-up-function 'next-line)
-  (setq mwheel-scroll-down-function 'previous-line))
+    (setq centered-cursor--original-mwheel-scroll-up-function
+          mwheel-scroll-up-function)
+    (setq centered-cursor--original-mwheel-scroll-down-function
+          mwheel-scroll-down-function)
+    (setq mwheel-scroll-up-function 'next-line)
+    (setq mwheel-scroll-down-function 'previous-line))
 
-(defun centered-cursor--reset-mwheel-scroll-functions ()
-  "Reset variables to original that do the scrolling in package `mwheel.el'.
+  (defun centered-cursor--reset-mwheel-scroll-functions ()
+    "Reset variables to original that do the scrolling in package `mwheel.el'.
 Previously set by `centered-cursor--set-mwheel-scroll-functions'."
-  (setq mwheel-scroll-up-function
-        centered-cursor--original-mwheel-scroll-up-function)
-  (setq mwheel-scroll-down-function
-        centered-cursor--original-mwheel-scroll-down-function))
+    (setq mwheel-scroll-up-function
+          centered-cursor--original-mwheel-scroll-up-function)
+    (setq mwheel-scroll-down-function
+          centered-cursor--original-mwheel-scroll-down-function)))
 
 
 
@@ -705,7 +707,7 @@ last-command:        %s
 visual-text-lines:   %s
 centered-cursor-position: %s
 delta: %s
-window-end: %s
+window-end: %s (only up-to-date after redisplay, after recentering!)
 point-max:  %s
 "
    last-command-event
