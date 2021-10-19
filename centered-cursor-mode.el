@@ -571,7 +571,10 @@ compatibility."
 
 ;;
 
-(when (boundp mouse-wheel-mode)
+;; On terminal emacs these variables are not bound because there is no mouse-wheel
+(setq gui (and (boundp 'mouse-wheel-mode) (boundp 'mwheel-scroll-up-function) (boundp 'mwheel-scroll-down-function)))
+
+(when gui
   (defvar-local centered-cursor--original-mwheel-scroll-up-function 'scroll-up)
   (defvar-local centered-cursor--original-mwheel-scroll-down-function 'scroll-down)
 
@@ -766,11 +769,11 @@ Key bindings:
    (centered-cursor-mode
     (centered-cursor--first-start)
     (centered-cursor--add-hooks)
-    (centered-cursor--set-mwheel-scroll-functions)
+    (when gui (centered-cursor--set-mwheel-scroll-functions))
     (centered-cursor--log "Centered-Cursor mode enabled"))
    (t
     (centered-cursor--remove-hooks)
-    (centered-cursor--reset-mwheel-scroll-functions)
+    (when gui (centered-cursor--reset-mwheel-scroll-functions))
     (centered-cursor--log "Centered-Cursor mode disabled"))))
 
 ;;;###autoload
