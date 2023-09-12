@@ -217,7 +217,29 @@ centered-cursor-mode is called non-interactively.")
 to successively recenter to")
 (make-variable-buffer-local 'recenter-sequence)
 
-(defvar ccm-map
+(if (version< emacs-version "29.1")
+    (defvar ccm-map
+      (let ((ccm-map (make-sparse-keymap)))
+	(define-key ccm-map [(control meta -)]  'ccm-vpos-up)
+	(define-key ccm-map [(control meta +)]  'ccm-vpos-down)
+	(define-key ccm-map [(control meta =)]  'ccm-vpos-down)
+	(define-key ccm-map [(control meta ?0)] 'ccm-vpos-recenter)
+	(when (and (boundp 'mouse-wheel-mode) mouse-wheel-mode)
+	  (mapc (lambda (key)
+		  (define-key ccm-map key 'ccm-mwheel-scroll))
+		(list (vector mouse-wheel-up-event)
+                      (vector mouse-wheel-down-event)
+                      (vector (list 'control mouse-wheel-up-event))
+                      (vector (list 'control mouse-wheel-down-event))
+                      (vector (list 'shift mouse-wheel-up-event))
+                      (vector (list 'shift mouse-wheel-down-event)))))
+	(define-key ccm-map [(meta v)] 'ccm-scroll-down)
+	(define-key ccm-map [(control v)] 'ccm-scroll-up)
+	(define-key ccm-map [prior] 'ccm-scroll-down)
+	(define-key ccm-map [next] 'ccm-scroll-up)
+	ccm-map)
+      "Keymap used in centered-cursor-mode.")
+  (defvar ccm-map
   (let ((ccm-map (make-sparse-keymap)))
     (define-key ccm-map [(control meta -)]  'ccm-vpos-up)
     (define-key ccm-map [(control meta +)]  'ccm-vpos-down)
@@ -243,11 +265,11 @@ to successively recenter to")
     (define-key ccm-map [prior] 'ccm-scroll-down)
     (define-key ccm-map [next] 'ccm-scroll-up)
    ccm-map)
-  "Keymap used in centered-cursor-mode.")
+  "Keymap used in centered-cursor-mode."))
 
-
-(defun ccm-mwheel-scroll (event)
-  "Very similar to `mwheel-scroll', but does not use `scroll-down'
+(if (version< emacs-version "29.1")
+    (defun ccm-mwheel-scroll (event)
+      "Very similar to `mwheel-scroll', but does not use `scroll-down'
 and `scroll-up' but `previous-line' and `next-line', that is, the
 cursor is moved and thus the text in the window is scrolled
 due to `recenter'.
@@ -258,30 +280,66 @@ the same as in mwheel-scroll, scroll by a near full screen.
 
 This command exists, because mwheel-scroll caused strange
 behaviour with automatic recentering."
-;;  (interactive (list last-input-event))
-  (interactive "e")
-  (when (region-active-p)
-    (deactivate-mark))
-  (let* ((mods (delq 'click (delq 'double (delq 'triple (event-modifiers event)))))
-         (amt (assoc mods mouse-wheel-scroll-amount)))
-    ;;(message "%S" mods)
-    (if amt
-        (setq amt (or (cdr amt)
-                      (- (ccm-visible-text-lines)
-                         next-screen-context-lines)))
-      (let ((list-elt mouse-wheel-scroll-amount))
-        (while (consp (setq amt (pop list-elt))))))
-    (if mouse-wheel-follow-mouse
-        (select-window (posn-window (event-start event))))
-    (let ((button (mwheel-event-button event)))
-      (cond
-       ((or (eq button mouse-wheel-down-event) (eq button mouse-wheel-down-alternate-event))
-        (forward-line (- amt)))
-        ;;(princ amt))
-       ((or (eq button mouse-wheel-up-event) (eq button mouse-wheel-up-alternate-event))
-        (forward-line amt))
+      ;;  (interactive (list last-input-event))
+      (interactive "e")
+      (when (region-active-p)
+	(deactivate-mark))
+      (let* ((mods (delq 'click (delq 'double (delq 'triple (event-modifiers event)))))
+             (amt (assoc mods mouse-wheel-scroll-amount)))
+	;;(message "%S" mods)
+	(if amt
+            (setq amt (or (cdr amt)
+			  (- (ccm-visible-text-lines)
+                             next-screen-context-lines)))
+	  (let ((list-elt mouse-wheel-scroll-amount))
+            (while (consp (setq amt (pop list-elt))))))
+	(if mouse-wheel-follow-mouse
+            (select-window (posn-window (event-start event))))
+	(let ((button (mwheel-event-button event)))
+	  (cond
+	   ((eq button mouse-wheel-down-event)
+            (forward-line (- amt)))
+           ;;(princ amt))
+	   ((eq button mouse-wheel-up-event)
+            (forward-line amt))
+           ;;(princ amt))
+	   (t (error "Bad binding in ccm-mwheel-scroll"))))))
+  (defun ccm-mwheel-scroll (event)
+    "Very similar to `mwheel-scroll', but does not use `scroll-down'
+and `scroll-up' but `previous-line' and `next-line', that is, the
+cursor is moved and thus the text in the window is scrolled
+due to `recenter'.
+
+The customizable variable `mouse-wheel-scroll-amount' is used to
+determine how much to scroll, where nil instead of a number means
+the same as in mwheel-scroll, scroll by a near full screen.
+
+This command exists, because mwheel-scroll caused strange
+behaviour with automatic recentering."
+    ;;  (interactive (list last-input-event))
+    (interactive "e")
+    (when (region-active-p)
+      (deactivate-mark))
+    (let* ((mods (delq 'click (delq 'double (delq 'triple (event-modifiers event)))))
+           (amt (assoc mods mouse-wheel-scroll-amount)))
+      ;;(message "%S" mods)
+      (if amt
+          (setq amt (or (cdr amt)
+			(- (ccm-visible-text-lines)
+                           next-screen-context-lines)))
+	(let ((list-elt mouse-wheel-scroll-amount))
+          (while (consp (setq amt (pop list-elt))))))
+      (if mouse-wheel-follow-mouse
+          (select-window (posn-window (event-start event))))
+      (let ((button (mwheel-event-button event)))
+	(cond
+	 ((or (eq button mouse-wheel-down-event) (eq button mouse-wheel-down-alternate-event))
+          (forward-line (- amt)))
          ;;(princ amt))
-       (t (error "Bad binding in ccm-mwheel-scroll"))))))
+	 ((or (eq button mouse-wheel-up-event) (eq button mouse-wheel-up-alternate-event))
+          (forward-line amt))
+         ;;(princ amt))
+	 (t (error "Bad binding in ccm-mwheel-scroll")))))))
 
 (defun ccm-scroll-down (&optional arg)
   "Replaces `scroll-down' because with scroll-down
