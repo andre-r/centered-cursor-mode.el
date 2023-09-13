@@ -56,8 +56,6 @@
 ;; - more bugs?
 
 ;;; Change Log:
-;; 2023-09-11 sir4ur0n
-;;   * support Emacs 29.1 mouse-wheel-[up|down]-alternate-event
 ;; 2020-05-07 hlissner
 ;;   * autoload global-centered-cursor-mode
 ;; 2019-03-06 kqr
@@ -228,16 +226,10 @@ to successively recenter to")
               (define-key ccm-map key 'ccm-mwheel-scroll))
             (list (vector mouse-wheel-up-event)
                   (vector mouse-wheel-down-event)
-                  (vector mouse-wheel-up-alternate-event)
-                  (vector mouse-wheel-down-alternate-event)
                   (vector (list 'control mouse-wheel-up-event))
                   (vector (list 'control mouse-wheel-down-event))
-                  (vector (list 'control mouse-wheel-up-alternate-event))
-                  (vector (list 'control mouse-wheel-down-alternate-event))
                   (vector (list 'shift mouse-wheel-up-event))
-                  (vector (list 'shift mouse-wheel-down-event))
-                  (vector (list 'shift mouse-wheel-up-alternate-event))
-                  (vector (list 'shift mouse-wheel-down-alternate-event)))))
+                  (vector (list 'shift mouse-wheel-down-event)))))
     (define-key ccm-map [(meta v)] 'ccm-scroll-down)
     (define-key ccm-map [(control v)] 'ccm-scroll-up)
     (define-key ccm-map [prior] 'ccm-scroll-down)
@@ -275,10 +267,10 @@ behaviour with automatic recentering."
         (select-window (posn-window (event-start event))))
     (let ((button (mwheel-event-button event)))
       (cond
-       ((or (eq button mouse-wheel-down-event) (eq button mouse-wheel-down-alternate-event))
+       ((eq button mouse-wheel-down-event)
         (forward-line (- amt)))
         ;;(princ amt))
-       ((or (eq button mouse-wheel-up-event) (eq button mouse-wheel-up-alternate-event))
+       ((eq button mouse-wheel-up-event)
         (forward-line amt))
          ;;(princ amt))
        (t (error "Bad binding in ccm-mwheel-scroll"))))))
