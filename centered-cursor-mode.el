@@ -8,9 +8,9 @@
 ;; Keywords: convenience
 
 ;; URL: https://github.com/andre-r/centered-cursor-mode.el
-;; Compatibility: tested with GNU Emacs 24, 26, 27
-;; Version: 0.5.12
-;; Last-Updated: 2020-05-07
+;; Compatibility: tested with GNU Emacs 24, 26, 27, 28
+;; Version: 0.5.13
+;; Last-Updated: 2023-09-13
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -56,6 +56,9 @@
 ;; - more bugs?
 
 ;;; Change Log:
+;; 2023-09-11 sir4ur0n, andre-r
+;;   * support Emacs 29.1 mouse-wheel-[up|down]-alternate-event
+;;   * some problems with shift mouse-wheel remain
 ;; 2020-05-07 hlissner
 ;;   * autoload global-centered-cursor-mode
 ;; 2019-03-06 kqr
@@ -229,7 +232,16 @@ to successively recenter to")
                   (vector (list 'control mouse-wheel-up-event))
                   (vector (list 'control mouse-wheel-down-event))
                   (vector (list 'shift mouse-wheel-up-event))
-                  (vector (list 'shift mouse-wheel-down-event)))))
+                  (vector (list 'shift mouse-wheel-down-event))))
+      (when (and (boundp 'mouse-wheel-up-alternate-event) (boundp 'mouse-wheel-down-alternate-event))
+        (mapc (lambda (key)
+                (define-key ccm-map key 'ccm-mwheel-scroll))
+              (list (vector mouse-wheel-up-alternate-event)
+                    (vector mouse-wheel-down-alternate-event)
+                    (vector (list 'control mouse-wheel-up-alternate-event))
+                    (vector (list 'control mouse-wheel-down-alternate-event))
+                    (vector (list 'shift mouse-wheel-up-alternate-event))
+                    (vector (list 'shift mouse-wheel-down-alternate-event))))))
     (define-key ccm-map [(meta v)] 'ccm-scroll-down)
     (define-key ccm-map [(control v)] 'ccm-scroll-up)
     (define-key ccm-map [prior] 'ccm-scroll-down)
@@ -238,7 +250,7 @@ to successively recenter to")
   "Keymap used in centered-cursor-mode.")
 
 
-(defun ccm-mwheel-scroll (event)
+(defun ccm-mwheel-scroll (event &optional args)
   "Very similar to `mwheel-scroll', but does not use `scroll-down'
 and `scroll-up' but `previous-line' and `next-line', that is, the
 cursor is moved and thus the text in the window is scrolled
@@ -251,12 +263,12 @@ the same as in mwheel-scroll, scroll by a near full screen.
 This command exists, because mwheel-scroll caused strange
 behaviour with automatic recentering."
 ;;  (interactive (list last-input-event))
-  (interactive "e")
+  (interactive (list last-input-event current-prefix-arg))
   (when (region-active-p)
     (deactivate-mark))
   (let* ((mods (delq 'click (delq 'double (delq 'triple (event-modifiers event)))))
          (amt (assoc mods mouse-wheel-scroll-amount)))
-    ;;(message "%S" mods)
+    ;; (message "%S" mods)
     (if amt
         (setq amt (or (cdr amt)
                       (- (ccm-visible-text-lines)
@@ -267,10 +279,14 @@ behaviour with automatic recentering."
         (select-window (posn-window (event-start event))))
     (let ((button (mwheel-event-button event)))
       (cond
-       ((eq button mouse-wheel-down-event)
+       ((or
+          (eq button mouse-wheel-down-event)
+          (and (boundp 'mouse-wheel-down-alternate-event) (eq button mouse-wheel-down-alternate-event)))
         (forward-line (- amt)))
         ;;(princ amt))
-       ((eq button mouse-wheel-up-event)
+       ((or
+          (eq button mouse-wheel-up-event)
+          (and (boundp 'mouse-wheel-up-alternate-event) (eq button mouse-wheel-up-alternate-event)))
         (forward-line amt))
          ;;(princ amt))
        (t (error "Bad binding in ccm-mwheel-scroll"))))))
